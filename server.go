@@ -18,7 +18,7 @@ type RaeMCPServer struct {
 	server *server.MCPServer
 }
 
-// NewRaeMCPServer creates a new MCP server with RAE API tools
+// Updated NewRaeMCPServer function with all tools
 func NewRaeMCPServer(logger zerolog.Logger) *RaeMCPServer {
 	mcpServer := server.NewMCPServer(
 		"rae-api-mcp",
@@ -28,7 +28,7 @@ func NewRaeMCPServer(logger zerolog.Logger) *RaeMCPServer {
 		server.WithToolCapabilities(true),
 	)
 
-	// Register RAE API tools
+	// Register existing RAE API tool
 	mcpServer.AddTool(mcp.NewTool("get_word_info",
 		mcp.WithDescription("Get detailed information about a word from RAE API"),
 		mcp.WithString("word",
@@ -36,6 +36,22 @@ func NewRaeMCPServer(logger zerolog.Logger) *RaeMCPServer {
 			mcp.Required(),
 		),
 	), newHandleGetWordInfoTool(logger))
+
+	// Register new Daily Word tool
+	mcpServer.AddTool(mcp.NewTool("get_daily_word",
+		mcp.WithDescription("Get the word of the day from RAE dictionary"),
+	), newHandleGetDailyWordTool(logger))
+
+	// Register new Random Word tool
+	mcpServer.AddTool(mcp.NewTool("get_random_word",
+		mcp.WithDescription("Get a random word from RAE dictionary"),
+		mcp.WithNumber("min_length",
+			mcp.Description("Minimum length of the random word"),
+		),
+		mcp.WithNumber("max_length",
+			mcp.Description("Maximum length of the random word"),
+		),
+	), newHandleGetRandomWordTool(logger))
 
 	return &RaeMCPServer{
 		server: mcpServer,

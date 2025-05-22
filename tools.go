@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/rs/zerolog"
@@ -96,4 +97,101 @@ func formatWordInfo(logger zerolog.Logger, wordInfo any) (string, error) {
 		return "", err
 	}
 	return string(jsonData), nil
+}
+
+// newHandleGetDailyWordTool returns a tool that gets the word of the day.
+func newHandleGetDailyWordTool(
+	logger zerolog.Logger,
+) func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		logger.Info().Msg("Getting daily word from RAE API")
+
+		dailyWord, err := client.Daily(ctx)
+		if err != nil {
+			logger.Error().Err(err).Msg("RAE API daily word error")
+			return nil, fmt.Errorf("RAE API daily word error: %v", err)
+		}
+
+		// Format the daily word information for the LLM
+		output, err := formatDailyWord(logger, dailyWord)
+		if err != nil {
+			logger.Error().Err(err).Msg("error formatting daily word")
+			return nil, fmt.Errorf("error formatting daily word: %v", err)
+		}
+
+		logger.Info().Msg("GetDailyWord successful")
+		return mcp.NewToolResultText(output), nil
+	}
+}
+
+// newHandleGetRandomWordTool returns a tool that gets a random word.
+func newHandleGetRandomWordTool(
+	logger zerolog.Logger,
+) func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		args := request.GetArguments()
+
+		// Parse optional min_length parameter
+		var minLength *int
+		if minLengthStr, ok := args["min_length"].(string); ok && minLengthStr != "" {
+			if val, err := strconv.Atoi(minLengthStr); err == nil && val > 0 {
+				minLength = &val
+			}
+		} else if minLengthFloat, ok := args["min_length"].(float64); ok && minLengthFloat > 0 {
+			val := int(minLengthFloat)
+			minLength = &val
+		}
+
+		// Parse optional max_length parameter
+		var maxLength *int
+		if maxLengthStr, ok := args["max_length"].(string); ok && maxLengthStr != "" {
+			if val, err := strconv.Atoi(maxLengthStr); err == nil && val > 0 {
+				maxLength = &val
+			}
+		} else if maxLengthFloat, ok := args["max_length"].(float64); ok && maxLengthFloat > 0 {
+			val := int(maxLengthFloat)
+			maxLength = &val
+		}
+
+		logger.Info().
+			Interface("min_length", minLength).
+			Interface("max_length", maxLength).
+			Msg("Getting random word from RAE API")
+
+		randomWord, err := client.Random(ctx)
+		if err != nil {
+			logger.Error().Err(err).Msg("RAE API random word error")
+			return nil, fmt.Errorf("RAE API random word error: %v", err)
+		}
+
+		// Format the random word information for the LLM
+		output, err := formatRandomWord(logger, randomWord)
+		if err != nil {
+			logger.Error().Err(err).Msg("error formatting random word")
+			return nil, fmt.Errorf("error formatting random word: %v", err)
+		}
+
+		logger.Info().Msg("GetRandomWord successful")
+		return mcp.NewToolResultText(output), nil
+	}
+}
+
+// formatDailyWord formats daily word information into a readable format for the LLM
+func formatDailyWord(logger zerolog.Logger, dailyWord any) (string, error) {
+	jsonData, err := json.MarshalIndent(dailyWord, "", "  ")
+	if err != nil {
+		logger.Error().Err(err).Msg("error marshaling daily word")
+		return "", err
+	}
+	return fmt.Sprintf("Word of the Day:\n%s", string(jsonData)), nil
+}
+
+// formatRandomWord formats random word information into a readable format for the LLM
+func formatRandomWord(logger zerolog.Logger, randomWord any) (string, error) {
+	jsonData, err := json.MarshalIndent(randomWord, "", "  ")
+	if err != nil {
+		logger.Error().Err(err).Msg("error marshaling random word")
+		return "", err
+	}
+	return fmt.Sprintf("Random Word:\n%s", string(jsonData)), nil
 }
