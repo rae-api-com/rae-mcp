@@ -6,6 +6,7 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/rae-api-com/go-rae"
+	"github.com/rs/zerolog"
 )
 
 var (
@@ -18,7 +19,7 @@ type RaeMCPServer struct {
 }
 
 // NewRaeMCPServer creates a new MCP server with RAE API tools
-func NewRaeMCPServer() *RaeMCPServer {
+func NewRaeMCPServer(logger zerolog.Logger) *RaeMCPServer {
 	mcpServer := server.NewMCPServer(
 		"rae-api-mcp",
 		"1.0.0",
@@ -34,7 +35,7 @@ func NewRaeMCPServer() *RaeMCPServer {
 			mcp.Description("The word to look up"),
 			mcp.Required(),
 		),
-	), handleGetWordInfoTool)
+	), newHandleGetWordInfoTool(logger))
 
 	return &RaeMCPServer{
 		server: mcpServer,

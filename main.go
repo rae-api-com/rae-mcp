@@ -10,7 +10,8 @@ import (
 
 func main() {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
-	logger := zerolog.New(zerolog.ConsoleWriter{Out: os.Stderr}).With().Timestamp().Logger()
+	logger := zerolog.New(zerolog.ConsoleWriter{Out: os.Stderr}).
+		With().Timestamp().Logger()
 
 	var transport string
 	var port int
@@ -22,7 +23,7 @@ func main() {
 
 	logger.Info().Str("transport", transport).Int("port", port).Msg("Starting server")
 
-	s := NewRaeMCPServer()
+	s := NewRaeMCPServer(logger)
 
 	switch transport {
 	case "stdio":
