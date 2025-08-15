@@ -1,4 +1,5 @@
 # RAE Model Context Protocol (MCP) Server
+[![Trust Score](https://archestra.ai/mcp-catalog/api/badge/quality/rae-api-com/rae-mcp)](https://archestra.ai/mcp-catalog/rae-api-com__rae-mcp)
 
 This repository contains an implementation of a Model Context Protocol (MCP) server for the Royal Spanish Academy (RAE) API. It allows language models to interact with RAE's dictionary and linguistic resources.
 
