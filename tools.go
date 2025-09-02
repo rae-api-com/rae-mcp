@@ -60,6 +60,17 @@ func newHandleGetWordInfoTool(
 		logger.Info().Str("word", word).Str("lang", lang).Msg("Getting word info from RAE API")
 		wordInfo, err := client.Word(ctx, word)
 		if err != nil {
+			if len(wordInfo.Suggestions) > 0 {
+				logger.Warn().Str("word", word).Msg("Word not found, suggesting alternatives")
+				output, err := formatSuggestions(wordInfo.Suggestions)
+				if err != nil {
+					logger.Error().Err(err).Str("word", word).Msg("error formatting suggestions")
+					return nil, fmt.Errorf("error formatting suggestions: %v", err)
+				}
+
+				return mcp.NewToolResultText(output), nil
+			}
+
 			logger.Error().Err(err).Str("word", word).Msg("RAE API word info error")
 			return nil, fmt.Errorf("RAE API word info error: %v", err)
 		}
@@ -74,6 +85,23 @@ func newHandleGetWordInfoTool(
 		logger.Info().Str("word", word).Msg("GetWordInfo successful")
 		return mcp.NewToolResultText(output), nil
 	}
+}
+
+// formatSuggestions formats the suggestions into a readable format for the LLM
+func formatSuggestions(res []string) (string, error) {
+	type suggestions struct {
+		Suggestions []string `json:"suggestions"`
+		Msg         string   `json:"msg"`
+	}
+	if len(res) == 0 {
+		return "No suggestions available", nil
+	}
+
+	bts, err := json.MarshalIndent(suggestions{Suggestions: res, Msg: "Did you mean one of these words?"}, "", "  ")
+	if err != nil {
+		return "", err
+	}
+	return string(bts), nil
 }
 
 // formatSearchResults formats the search results into a readable format for the LLM
