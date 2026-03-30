@@ -7,6 +7,10 @@ This repository contains an implementation of a Model Context Protocol (MCP) ser
 
 - Go 1.21+
 
+## Hosted deployment
+
+A hosted deployment is available on [Fronteir AI](https://fronteir.ai/mcp/rae-api-com-rae-mcp).
+
 ## Installation
 
 ```bash
